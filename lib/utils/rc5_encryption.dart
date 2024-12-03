@@ -7,18 +7,15 @@ class RC5Encryption {
   static const int t = 26; // size of table S = 2(r+1) words
 
   static List<int> _expandKey(String key) {
-    List<int> L = []; // This is already a growable list
-    List<int> S = List<int>.filled(t, 0); // This is a fixed-length list, but we're not adding to it
+    List<int> L = [];
+    List<int> S = List<int>.filled(t, 0);
     
-    // Convert the key to bytes
-    List<int> K = utf8.encode(key).toList(); // Ensure K is a growable list
+    List<int> K = utf8.encode(key).toList();
 
-    // Pad the key to a multiple of 4 bytes
     while (K.length % 4 != 0) {
       K.add(0);
     }
 
-    // Initialize L
     for (int i = 0; i < K.length; i += 4) {
       L.add(((K[i] & 0xFF) << 24) |
             ((K[i + 1] & 0xFF) << 16) |
@@ -26,13 +23,11 @@ class RC5Encryption {
             (K[i + 3] & 0xFF));
     }
 
-    // Initialize S
     S[0] = 0xB7E15163;
     for (int i = 1; i < t; i++) {
       S[i] = (S[i - 1] + 0x9E3779B9) & 0xFFFFFFFF;
     }
 
-    // Mix in the secret key
     int i = 0, j = 0;
     int A = 0, B = 0;
     int c = L.length;
@@ -57,9 +52,8 @@ class RC5Encryption {
   static String encrypt(String plaintext, String key) {
     try {
       List<int> S = _expandKey(key);
-      List<int> bytes = utf8.encode(plaintext).toList(); // Ensure bytes is a growable list
+      List<int> bytes = utf8.encode(plaintext).toList();
       
-      // Pad the input to be a multiple of 8 bytes (64 bits)
       while (bytes.length % 8 != 0) {
         bytes.add(0);
       }
@@ -98,8 +92,16 @@ class RC5Encryption {
 
   static String decrypt(String ciphertext, String key) {
     try {
+      if (ciphertext.startsWith('Error:')) {
+        throw FormatException('Invalid ciphertext');
+      }
+      
       List<int> S = _expandKey(key);
       List<int> bytes = base64.decode(ciphertext);
+
+      if (bytes.length % 8 != 0) {
+        throw FormatException('Ciphertext length must be a multiple of 8 bytes');
+      }
 
       List<int> decrypted = [];
       for (int i = 0; i < bytes.length; i += 8) {
@@ -126,7 +128,6 @@ class RC5Encryption {
         ]);
       }
 
-      // Remove padding
       while (decrypted.isNotEmpty && decrypted.last == 0) {
         decrypted.removeLast();
       }

@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
 
     String encryptedMessage = RC5Encryption.encrypt(message, key);
+    print('Debug - Encrypted message: $encryptedMessage');
     setState(() {
       _outputMessage = encryptedMessage;
       _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
@@ -63,7 +64,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return;
     }
 
+    print('Debug - Attempting to decrypt: $encryptedMessage');
     String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
+    print('Debug - Decryption result: $decryptedMessage');
     setState(() {
       _outputMessage = decryptedMessage;
       _messages.add(Message(content: decryptedMessage, isEncrypted: false, timestamp: DateTime.now()));
@@ -247,4 +250,3 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 }
-

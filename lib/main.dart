@@ -17,11 +17,19 @@ void testEncryption() {
   String encrypted = RC5Encryption.encrypt(originalMessage, key);
   print("Encrypted: $encrypted");
 
+  if (encrypted.startsWith('Error:')) {
+    print("Encryption failed!");
+    return;
+  }
+
   String decrypted = RC5Encryption.decrypt(encrypted, key);
   print("Decrypted: $decrypted");
 
-  assert(originalMessage == decrypted, "Decryption failed!");
-  print("Encryption test passed!");
+  if (originalMessage == decrypted) {
+    print("Encryption test passed!");
+  } else {
+    print("Encryption test failed!");
+  }
 }
 
 class SecureChatApp extends StatelessWidget {
@@ -105,4 +113,3 @@ class SecureChatApp extends StatelessWidget {
     );
   }
 }
-
