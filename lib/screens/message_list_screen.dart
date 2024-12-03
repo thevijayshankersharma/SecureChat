@@ -9,18 +9,74 @@ class Message {
   Message({required this.content, required this.isEncrypted, required this.timestamp});
 }
 
-class MessageListScreen extends StatelessWidget {
+class MessageListScreen extends StatefulWidget {
   final List<Message> messages;
 
-  const MessageListScreen({Key? key, required this.messages}) : super(key: key);
+  MessageListScreen({Key? key, required this.messages}) : super(key: key);
+
+  @override
+  _MessageListScreenState createState() => _MessageListScreenState();
+}
+
+class _MessageListScreenState extends State<MessageListScreen> {
+  late List<Message> _messages;
+
+  @override
+  void initState() {
+    super.initState();
+    _messages = List.from(widget.messages);
+  }
+
+  void _deleteAllMessages() {
+    setState(() {
+      _messages.clear();
+    });
+  }
+
+  void _deleteMessage(int index) {
+    setState(() {
+      _messages.removeAt(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Message History'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.delete_forever),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Delete All Messages'),
+                    content: Text('Are you sure you want to delete all messages?'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: Text('Cancel'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      TextButton(
+                        child: Text('Delete'),
+                        onPressed: () {
+                          _deleteAllMessages();
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
-      body: messages.isEmpty
+      body: _messages.isEmpty
           ? Center(
               child: Text(
                 'No messages yet',
@@ -28,22 +84,34 @@ class MessageListScreen extends StatelessWidget {
               ),
             )
           : ListView.builder(
-              itemCount: messages.length,
+              itemCount: _messages.length,
               itemBuilder: (context, index) {
-                final message = messages[index];
-                return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                final message = _messages[index];
+                return Dismissible(
+                  key: Key(message.timestamp.toString()),
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: EdgeInsets.only(right: 20),
+                    child: Icon(Icons.delete, color: Colors.white),
+                  ),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (direction) {
+                    _deleteMessage(index);
+                  },
                   child: ListTile(
                     title: Text(
                       message.content,
                       style: GoogleFonts.roboto(
                         fontWeight: FontWeight.w500,
-                        color: message.isEncrypted ? Colors.green : Colors.blue,
                       ),
                     ),
                     subtitle: Text(
-                      '${message.isEncrypted ? "Encrypted" : "Decrypted"} - ${message.timestamp.toString().split('.')[0]}',
-                      style: GoogleFonts.roboto(fontSize: 12),
+                      '${message.isEncrypted ? "Encrypted" : "Decrypted"} • ${_formatDate(message.timestamp)}',
+                      style: GoogleFonts.roboto(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
                     ),
                     leading: Icon(
                       message.isEncrypted ? Icons.lock : Icons.lock_open,
@@ -54,5 +122,9 @@ class MessageListScreen extends StatelessWidget {
               },
             ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}';
   }
 }

@@ -12,7 +12,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _keyController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController(text: '+91');
   String _outputMessage = '';
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -34,6 +34,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     _animationController.dispose();
+    _messageController.dispose();
+    _keyController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -78,19 +81,37 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     String encryptedMessage = _outputMessage;
     String phoneNumber = _phoneController.text;
 
-    if (encryptedMessage.isEmpty || phoneNumber.isEmpty) {
-      _showSnackBar('Please provide a phone number and encrypt a message!');
+    if (encryptedMessage.isEmpty) {
+      _showSnackBar('Please encrypt a message first!');
       return;
     }
 
-    // Here you would integrate SMS sending logic
-    _showSnackBar('SMS sent to $phoneNumber');
+    if (phoneNumber.isEmpty || phoneNumber == '+91') {
+      _showSnackBar('Please provide a valid phone number!');
+      return;
+    }
+
+    // Here you would integrate actual SMS sending logic
+    _checkSMSPermission().then((hasPermission) {
+      if (hasPermission) {
+        print('Sending SMS to $phoneNumber: $encryptedMessage');
+        _showSnackBar('SMS sent to $phoneNumber');
+      } else {
+        _showSnackBar('SMS permission not granted');
+      }
+    });
+  }
+
+  Future<bool> _checkSMSPermission() async {
+    // Simulating permission check
+    await Future.delayed(Duration(seconds: 1));
+    return true; // Always return true for this example
   }
 
   void _clearFields() {
     _messageController.clear();
     _keyController.clear();
-    _phoneController.clear();
+    _phoneController.text = '+91';
     setState(() {
       _outputMessage = '';
     });
@@ -250,3 +271,4 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 }
+
