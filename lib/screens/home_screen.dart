@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:securechat/utils/rc5_encryption.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'message_list_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -17,6 +19,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late AnimationController _animationController;
   late Animation<double> _animation;
   List<Message> _messages = [];
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -29,6 +32,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+    _checkInitialSMSPermission();
   }
 
   @override
@@ -38,6 +42,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _keyController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkInitialSMSPermission() async {
+    var status = await Permission.sms.status;
+    if (status.isDenied) {
+      await Permission.sms.request();
+    }
   }
 
   void _encryptMessage() {
@@ -77,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _animateOutput();
   }
 
-  void _sendSMS() {
+  void _sendSMS() async {
     String encryptedMessage = _outputMessage;
     String phoneNumber = _phoneController.text;
 
@@ -86,26 +97,72 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return;
     }
 
-    if (phoneNumber.isEmpty || phoneNumber == '+91') {
-      _showSnackBar('Please provide a valid phone number!');
+    if (!_isValidPhoneNumber(phoneNumber)) {
+      _showSnackBar('Please enter a valid 10-digit phone number after +91');
       return;
     }
 
-    // Here you would integrate actual SMS sending logic
-    _checkSMSPermission().then((hasPermission) {
-      if (hasPermission) {
-        print('Sending SMS to $phoneNumber: $encryptedMessage');
-        _showSnackBar('SMS sent to $phoneNumber');
-      } else {
-        _showSnackBar('SMS permission not granted');
-      }
-    });
+    bool hasPermission = await _checkSMSPermission();
+    if (hasPermission) {
+      setState(() {
+        _isSending = true;
+      });
+
+      // Here you would integrate actual SMS sending logic
+      await Future.delayed(Duration(seconds: 2)); // Simulate sending delay
+
+      setState(() {
+        _isSending = false;
+      });
+
+      _showSnackBar('SMS sent to $phoneNumber');
+      _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
+    } else {
+      _showPermissionDialog();
+    }
   }
 
   Future<bool> _checkSMSPermission() async {
-    // Simulating permission check
-    await Future.delayed(Duration(seconds: 1));
-    return true; // Always return true for this example
+    var status = await Permission.sms.status;
+    if (status.isGranted) {
+      return true;
+    }
+    if (status.isDenied) {
+      status = await Permission.sms.request();
+      return status.isGranted;
+    }
+    return false;
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('SMS Permission Required'),
+          content: Text('SMS permission is required to send messages. Please enable it in app settings.'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: Text('Open Settings'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                openAppSettings();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  bool _isValidPhoneNumber(String number) {
+    if (number.length != 13) return false; // +91 + 10 digits
+    if (!number.startsWith('+91')) return false;
+    return RegExp(r'^\+91[0-9]{10}$').hasMatch(number);
   }
 
   void _clearFields() {
@@ -183,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
                 SizedBox(height: 24),
-                _buildActionButton('Send SMS', Icons.send, _sendSMS, fullWidth: true),
+                _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
                 SizedBox(height: 24),
                 AnimatedBuilder(
                   animation: _animation,
@@ -257,15 +314,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
       ),
       keyboardType: keyboardType,
+      inputFormatters: label == 'Recipient Phone Number'
+          ? [
+              FilteringTextInputFormatter.allow(RegExp(r'^\+91[0-9]{0,10}$')),
+              LengthLimitingTextInputFormatter(13),
+            ]
+          : null,
+      onChanged: label == 'Recipient Phone Number'
+          ? (value) {
+              if (value.length < 3) {
+                controller.text = '+91';
+                controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
+              }
+            }
+          : null,
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed, {bool fullWidth = false}) {
+  Widget _buildActionButton(String label, IconData icon, VoidCallback? onPressed, {bool fullWidth = false}) {
     return SizedBox(
       width: fullWidth ? double.infinity : null,
       child: ElevatedButton.icon(
         onPressed: onPressed,
-        icon: Icon(icon),
+        icon: _isSending && label == 'Send SMS'
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 2,
+                ),
+              )
+            : Icon(icon),
         label: Text(label),
       ),
     );
