@@ -5,8 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'message_list_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_sms/flutter_sms.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -102,24 +102,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return;
     }
 
-    bool hasPermission = await _checkSMSPermission();
-    if (hasPermission) {
-      setState(() {
-        _isSending = true;
-      });
+    setState(() {
+      _isSending = true;
+    });
 
-      try {
-        await sendSMS(message: encryptedMessage, recipients: [phoneNumber]);
-        _showSnackBar('SMS sent to $phoneNumber');
+    try {
+      final Uri smsLaunchUri = Uri(
+        scheme: 'sms',
+        path: phoneNumber,
+        queryParameters: <String, String>{
+          'body': encryptedMessage,
+        },
+      );
+
+      if (await canLaunchUrl(smsLaunchUri)) {
+        await launchUrl(smsLaunchUri);
+        _showSnackBar('SMS app opened with the encrypted message');
         _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
-      } catch (error) {
-        _showSnackBar('Failed to send SMS: $error');
-      } finally {
-        setState(() {
-          _isSending = false;
-        });
+      } else {
+        _showSnackBar('Could not open SMS app');
       }
-    } else {
+    } catch (error) {
+      _showSnackBar('Failed to open SMS app: $error');
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
+  } else {
       _showPermissionDialog('SMS');
     }
   }

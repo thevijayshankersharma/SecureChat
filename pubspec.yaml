@@ -32,15 +32,15 @@ dependencies:
     sdk: flutter
   provider: ^6.1.2
   permission_handler: ^11.3.1
-  shared_preferences: ^2.1.1
+  shared_preferences: ^2.3.3
   encrypt: ^5.0.3
   crypto: ^3.0.6
   http: ^1.2.2
   intl: ^0.20.1
-  flutter_sms: ^2.3.3
   flutter_contacts: ^1.1.9+2
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.16
+  url_launcher: ^6.1.10
 
 dev_dependencies:
   flutter_test:
