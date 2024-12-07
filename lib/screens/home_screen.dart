@@ -47,7 +47,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _checkInitialPermissions() async {
-    await Permission.sms.request();
     await Permission.contacts.request();
   }
 
@@ -129,27 +128,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         _isSending = false;
       });
     }
-  } else {
-      _showPermissionDialog('SMS');
-    }
-  }
-
-  Future<bool> _checkSMSPermission() async {
-    var status = await Permission.sms.status;
-    if (status.isGranted) {
-      return true;
-    }
-    if (status.isPermanentlyDenied) {
-      _showPermissionDialog('SMS');
-      return false;
-    }
-    status = await Permission.sms.request();
-    return status.isGranted;
   }
 
   Future<void> _selectContact() async {
-    if (await _checkContactPermission()) {
-      try {
+    try {
+      if (await Permission.contacts.request().isGranted) {
         final contact = await FlutterContacts.openContactPicker();
         if (contact != null) {
           final phones = await contact.phones;
@@ -162,25 +145,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             });
           }
         }
-      } catch (e) {
-        _showSnackBar('Error selecting contact: $e');
+      } else {
+        _showPermissionDialog('Contacts');
       }
-    } else {
-      _showPermissionDialog('Contacts');
+    } catch (e) {
+      _showSnackBar('Error selecting contact: $e');
     }
-  }
-
-  Future<bool> _checkContactPermission() async {
-    var status = await Permission.contacts.status;
-    if (status.isGranted) {
-      return true;
-    }
-    if (status.isPermanentlyDenied) {
-      _showPermissionDialog('Contacts');
-      return false;
-    }
-    status = await Permission.contacts.request();
-    return status.isGranted;
   }
 
   void _showPermissionDialog(String permissionType) {
@@ -257,8 +227,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: SvgPicture.asset(
-            'assets/lock_icon.svg',
-            color: Colors.white,
+            'assets/images/lock_icon.svg',
+            colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
         actions: [
@@ -412,4 +382,3 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 }
-
