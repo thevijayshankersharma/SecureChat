@@ -1,15 +1,14 @@
 buildscript {
     ext {
         kotlin_version = '1.7.10'
-        gradle_version = '7.3.0'
     }
     repositories {
-        mavenCentral()
         google()
+        mavenCentral()
     }
 
     dependencies {
-        classpath "com.android.tools.build:gradle:$gradle_version"
+        classpath 'com.android.tools.build:gradle:7.3.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -24,14 +23,11 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-    project.evaluationDependsOn(':app')
-
-    afterEvaluate { project ->
+    
+    gradle.projectsEvaluated {
         if (project.hasProperty('android')) {
             android {
-                if (!android.hasProperty('namespace')) {
-                    namespace project.group ?: project.name
-                }
+                namespace = project.group ?: project.name
             }
         }
     }
