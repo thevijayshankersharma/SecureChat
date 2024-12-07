@@ -1,7 +1,5 @@
 buildscript {
-    ext {
-        kotlin_version = '1.7.10'
-    }
+    ext.kotlin_version = '1.7.10'
     repositories {
         google()
         mavenCentral()
@@ -18,17 +16,23 @@ allprojects {
         google()
         mavenCentral()
     }
+    
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+        }
+    }
 }
 
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
     
-    gradle.projectsEvaluated {
-        if (project.hasProperty('android')) {
-            android {
-                namespace = project.group ?: project.name
-            }
+    if (project.name == "flutter_sms") {
+        project.evaluationDependsOn(':app')
+        project.configurations.all {
+            resolutionStrategy.force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
         }
     }
 }
