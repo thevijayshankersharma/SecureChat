@@ -133,17 +133,46 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _selectContact() async {
     try {
       if (await Permission.contacts.request().isGranted) {
-        final contact = await FlutterContacts.openContactPicker();
-        if (contact != null) {
-          final phones = await contact.phones;
-          if (phones.isNotEmpty) {
-            String phoneNumber = phones.first.number;
-            // Remove any non-digit characters and add the +91 prefix
-            phoneNumber = '+91' + phoneNumber.replaceAll(RegExp(r'\D'), '');
-            setState(() {
-              _phoneController.text = phoneNumber;
-            });
+        final contacts = await FlutterContacts.getContacts(
+          withProperties: true,
+          withPhoto: false,
+        );
+        if (contacts.isNotEmpty) {
+          // Show a dialog to select contact
+          final contact = await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Select Contact'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: contacts.length,
+                  itemBuilder: (context, index) {
+                    final contact = contacts[index];
+                    return ListTile(
+                      title: Text(contact.displayName),
+                      onTap: () => Navigator.of(context).pop(contact),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+
+          if (contact != null) {
+            final phones = contact.phones;
+            if (phones.isNotEmpty) {
+              String phoneNumber = phones.first.number;
+              // Remove any non-digit characters and add the +91 prefix
+              phoneNumber = '+91' + phoneNumber.replaceAll(RegExp(r'\D'), '');
+              setState(() {
+                _phoneController.text = phoneNumber;
+              });
+            }
           }
+        } else {
+          _showSnackBar('No contacts found');
         }
       } else {
         _showPermissionDialog('Contacts');
