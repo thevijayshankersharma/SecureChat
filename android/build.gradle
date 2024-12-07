@@ -16,23 +16,18 @@ allprojects {
         google()
         mavenCentral()
     }
-}
-
-subprojects {
+    
+    // Force all projects to use the same Kotlin version
+    plugins.withId('org.jetbrains.kotlin.android') {
+        kotlinVersion = ext.kotlin_version
+    }
+    
+    // Handle namespace for subprojects
     afterEvaluate { project ->
         if (project.hasProperty('android')) {
             android {
                 if (namespace == null) {
                     namespace project.group ?: project.name
-                }
-                compileSdkVersion 33
-                defaultConfig {
-                    minSdkVersion 21
-                    targetSdkVersion 33
-                }
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_1_8
-                    targetCompatibility JavaVersion.VERSION_1_8
                 }
             }
         }
@@ -42,6 +37,17 @@ subprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+    
+    // Force Kotlin version for all subprojects
+    project.plugins.whenPluginAdded { plugin ->
+        if (plugin.class.name.startsWith('org.jetbrains.kotlin')) {
+            project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                kotlinOptions {
+                    jvmTarget = '1.8'
+                }
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
