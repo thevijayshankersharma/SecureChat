@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'message_list_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_sms/flutter_sms.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -32,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+    _checkInitialPermissions();
   }
 
   @override
@@ -43,11 +46,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  Future<void> _checkInitialSMSPermission() async {
-    var status = await Permission.sms.status;
-    if (status.isDenied) {
-      await Permission.sms.request();
-    }
+  Future<void> _checkInitialPermissions() async {
+    await Permission.sms.request();
+    await Permission.contacts.request();
   }
 
   void _encryptMessage() {
@@ -107,17 +108,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         _isSending = true;
       });
 
-      // Here you would integrate actual SMS sending logic
-      await Future.delayed(Duration(seconds: 2)); // Simulate sending delay
-
-      setState(() {
-        _isSending = false;
-      });
-
-      _showSnackBar('SMS sent to $phoneNumber');
-      _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
+      try {
+        await sendSMS(message: encryptedMessage, recipients: [phoneNumber]);
+        _showSnackBar('SMS sent to $phoneNumber');
+        _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
+      } catch (error) {
+        _showSnackBar('Failed to send SMS: $error');
+      } finally {
+        setState(() {
+          _isSending = false;
+        });
+      }
     } else {
-      _showPermissionDialog();
+      _showPermissionDialog('SMS');
     }
   }
 
@@ -127,20 +130,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       return true;
     }
     if (status.isPermanentlyDenied) {
-      _showPermissionDialog();
+      _showPermissionDialog('SMS');
       return false;
     }
     status = await Permission.sms.request();
     return status.isGranted;
   }
 
-  void _showPermissionDialog() {
+  Future<void> _selectContact() async {
+    if (await _checkContactPermission()) {
+      try {
+        final contact = await FlutterContacts.openContactPicker();
+        if (contact != null) {
+          final phones = await contact.phones;
+          if (phones.isNotEmpty) {
+            String phoneNumber = phones.first.number;
+            // Remove any non-digit characters and add the +91 prefix
+            phoneNumber = '+91' + phoneNumber.replaceAll(RegExp(r'\D'), '');
+            setState(() {
+              _phoneController.text = phoneNumber;
+            });
+          }
+        }
+      } catch (e) {
+        _showSnackBar('Error selecting contact: $e');
+      }
+    } else {
+      _showPermissionDialog('Contacts');
+    }
+  }
+
+  Future<bool> _checkContactPermission() async {
+    var status = await Permission.contacts.status;
+    if (status.isGranted) {
+      return true;
+    }
+    if (status.isPermanentlyDenied) {
+      _showPermissionDialog('Contacts');
+      return false;
+    }
+    status = await Permission.contacts.request();
+    return status.isGranted;
+  }
+
+  void _showPermissionDialog(String permissionType) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('SMS Permission Required'),
-          content: Text('SMS permission is required to send messages. Please enable it in app settings.'),
+          title: Text('$permissionType Permission Required'),
+          content: Text('$permissionType permission is required. Please enable it in app settings.'),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
@@ -230,7 +269,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 SizedBox(height: 16),
                 _buildInputField(_keyController, 'Encryption Key', Icons.vpn_key),
                 SizedBox(height: 16),
-                _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+                    ),
+                    SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(Icons.contacts),
+                      onPressed: _selectContact,
+                      tooltip: 'Select Contact',
+                    ),
+                  ],
+                ),
                 SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
