@@ -32,7 +32,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    _checkInitialSMSPermission();
   }
 
   @override
@@ -127,11 +126,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     if (status.isGranted) {
       return true;
     }
-    if (status.isDenied) {
-      status = await Permission.sms.request();
-      return status.isGranted;
+    if (status.isPermanentlyDenied) {
+      _showPermissionDialog();
+      return false;
     }
-    return false;
+    status = await Permission.sms.request();
+    return status.isGranted;
   }
 
   void _showPermissionDialog() {

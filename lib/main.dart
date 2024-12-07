@@ -3,12 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 import 'utils/rc5_encryption.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await requestPermissions();
   testEncryption();
   runApp(SecureChatApp());
+}
+
+Future<void> requestPermissions() async {
+  await Permission.sms.request();
 }
 
 void testEncryption() {
