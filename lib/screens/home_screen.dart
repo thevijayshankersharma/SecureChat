@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:securechat/utils/rc5_encryption.dart';
@@ -52,109 +53,76 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _encryptMessage() {
-  String message = _messageController.text;
-  String key = _keyController.text;
+    String message = _messageController.text;
+    String key = _keyController.text;
 
-  if (message.isEmpty || key.isEmpty) {
-    _showSnackBar('Please enter both message and key!');
-    return;
+    if (message.isEmpty || key.isEmpty) {
+      _showSnackBar('Please enter both message and key!');
+      return;
+    }
+
+    String encryptedMessage = RC5Encryption.encrypt(message, key);
+    print('Debug - Encrypted message: $encryptedMessage');
+    
+    setState(() {
+      _outputMessage = encryptedMessage;
+    });
+
+    _animateOutput();
   }
-
-  String encryptedMessage = RC5Encryption.encrypt(message, key);
-  print('Debug - Encrypted message: $encryptedMessage');
-  
-  // Only update the output message, don't add to messages list yet
-  setState(() {
-    _outputMessage = encryptedMessage;
-  });
-
-  _animateOutput();
-}
 
   void _decryptMessage() {
-  String encryptedMessage = _messageController.text;
-  String key = _keyController.text;
+    String encryptedMessage = _messageController.text;
+    String key = _keyController.text;
 
-  if (encryptedMessage.isEmpty || key.isEmpty) {
-    _showSnackBar('Please enter both encrypted message and key!');
-    return;
+    if (encryptedMessage.isEmpty || key.isEmpty) {
+      _showSnackBar('Please enter both encrypted message and key!');
+      return;
+    }
+
+    print('Debug - Attempting to decrypt: $encryptedMessage');
+    String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
+    print('Debug - Decryption result: $decryptedMessage');
+    
+    setState(() {
+      _outputMessage = decryptedMessage;
+    });
+
+    _animateOutput();
   }
-
-  print('Debug - Attempting to decrypt: $encryptedMessage');
-  String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
-  print('Debug - Decryption result: $decryptedMessage');
-  
-  // Only update the output message, don't add to messages list yet
-  setState(() {
-    _outputMessage = decryptedMessage;
-  });
-
-  _animateOutput();
-}
 
   void _sendSMS() async {
-  String encryptedMessage = _outputMessage;
-  String phoneNumber = _phoneController.text;
+    String encryptedMessage = _outputMessage;
+    String phoneNumber = _phoneController.text;
 
-  if (encryptedMessage.isEmpty) {
-    _showSnackBar('Please encrypt a message first!');
-    return;
-  }
-
-  if (!_isValidPhoneNumber(phoneNumber)) {
-    _showSnackBar('Please enter a valid 10-digit phone number after +91');
-    return;
-  }
-
-  setState(() {
-    _isSending = true;
-  });
-
-  try {
-    Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
-    if (result['success']) {
-      _showSnackBar('SMS sent successfully');
-      
-      // Now that the message is sent, add to the message list
-      _messages.add(Message(
-        content: encryptedMessage,
-        isEncrypted: true,
-        timestamp: DateTime.now(),
-        deliveryStatus: MessageDeliveryStatus.sent,
-      ));
-      _startDeliveryStatusCheck(phoneNumber, encryptedMessage);
-    } else {
-      _showSnackBar('Failed to send SMS: ${result['error']}');
-      _messages.add(Message(
-        content: encryptedMessage,
-        isEncrypted: true,
-        timestamp: DateTime.now(),
-        deliveryStatus: MessageDeliveryStatus.failed,
-      ));
+    if (encryptedMessage.isEmpty) {
+      _showSnackBar('Please encrypt a message first!');
+      return;
     }
-  } catch (error) {
-    _showSnackBar('Failed to send SMS: $error');
-    _messages.add(Message(
-      content: encryptedMessage,
-      isEncrypted: true,
-      timestamp: DateTime.now(),
-      deliveryStatus: MessageDeliveryStatus.failed,
-    ));
-  } finally {
-    setState(() {
-      _isSending = false;
-    });
-  }
-}
 
-  void _startDeliveryStatusCheck(String phoneNumber, String message) {
-    // This is a placeholder for the actual implementation
-    Future.delayed(Duration(seconds: 5), () {
-      setState(() {
-        _messages.last = _messages.last.copyWith(deliveryStatus: MessageDeliveryStatus.delivered);
-      });
-      _showSnackBar('Message delivered successfully');
+    if (!_isValidPhoneNumber(phoneNumber)) {
+      _showSnackBar('Please enter a valid 10-digit phone number after +91');
+      return;
+    }
+
+    setState(() {
+      _isSending = true;
     });
+
+    try {
+      Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
+      if (result['success']) {
+        _showSnackBar('SMS sent successfully');
+      } else {
+        _showSnackBar('Failed to send SMS: ${result['error']}');
+      }
+    } catch (error) {
+      _showSnackBar('Failed to send SMS: $error');
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
   }
 
   Future<void> _selectContact() async {
@@ -269,15 +237,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _animationController.forward(from: 0.0);
   }
 
-  void _navigateToMessageList() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MessageListScreen(messages: _messages),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -293,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         actions: [
           IconButton(
             icon: Icon(Icons.history),
-            onPressed: _navigateToMessageList,
+            onPressed: () {},
           ),
         ],
       ),
@@ -334,73 +293,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
-                  return Transform.scale(
-                    scale: _animation.value,
+                  return Opacity(
+                    opacity: _animation.value,
                     child: child,
                   );
                 },
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Output',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        _outputMessage.isEmpty ? 'No output yet' : _outputMessage,
-                        style: GoogleFonts.roboto(
-                          fontSize: 16,
-                          color: Colors.black54,
-                        ),
-                        maxLines: 5,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _messages.length,
-                  itemBuilder: (context, index) {
-                    final message = _messages[index];
-                    return ListTile(
-                      title: Text(message.content),
-                      subtitle: Text(
-                        '${message.isEncrypted ? "Encrypted" : "Decrypted"} - ${message.timestamp.toString()} - ${_getDeliveryStatusText(message.deliveryStatus)}',
-                      ),
-                      trailing: Icon(_getDeliveryStatusIcon(message.deliveryStatus)),
-                    );
-                  },
-                ),
-              ),
-              SizedBox(height: 24),
-              ElevatedButton.icon(
-                onPressed: _clearFields,
-                icon: Icon(Icons.clear),
-                label: Text('Clear All'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
+                child: Text(
+                  _outputMessage,
+                  style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -410,132 +310,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildInputField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType}) {
-    return TextField(
+  Widget _buildInputField(TextEditingController controller, String label, IconData icon, {TextInputType keyboardType = TextInputType.text}) {
+    return TextFormField(
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
+        prefixIcon: Icon(icon),
+        border: OutlineInputBorder(),
       ),
       keyboardType: keyboardType,
-      inputFormatters: label == 'Recipient Phone Number'
-          ? [
-              FilteringTextInputFormatter.allow(RegExp(r'^\+91[0-9]{0,10}$')),
-              LengthLimitingTextInputFormatter(13),
-            ]
-          : null,
-      onChanged: label == 'Recipient Phone Number'
-          ? (value) {
-              if (value.length < 3) {
-                controller.text = '+91';
-                controller.selection = TextSelection.fromPosition(TextPosition(offset: controller.text.length));
-              }
-            }
-          : null,
     );
   }
 
-  Widget _buildActionButton(String label, IconData icon, VoidCallback? onPressed, {bool fullWidth = false}) {
-    return SizedBox(
-      width: fullWidth ? double.infinity : null,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: _isSending && label == 'Send SMS'
-            ? SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2,
-                ),
-              )
-            : Icon(icon),
-        label: Text(label),
-      ),
-    );
-  }
-
-  String _getDeliveryStatusText(MessageDeliveryStatus status) {
-    switch (status) {
-      case MessageDeliveryStatus.sent:
-        return 'Sent';
-      case MessageDeliveryStatus.delivered:
-        return 'Delivered';
-      case MessageDeliveryStatus.failed:
-        return 'Failed';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  IconData _getDeliveryStatusIcon(MessageDeliveryStatus status) {
-    switch (status) {
-      case MessageDeliveryStatus.sent:
-        return Icons.check;
-      case MessageDeliveryStatus.delivered:
-        return Icons.done_all;
-      case MessageDeliveryStatus.failed:
-        return Icons.error_outline;
-      default:
-        return Icons.help_outline;
-    }
-  }
-}
-
-class Message {
-  final String content;
-  final bool isEncrypted;
-  final DateTime timestamp;
-  final MessageDeliveryStatus deliveryStatus;
-
-  Message({
-    required this.content,
-    required this.isEncrypted,
-    required this.timestamp,
-    this.deliveryStatus = MessageDeliveryStatus.sent,
-  });
-
-  Message copyWith({
-    String? content,
-    bool? isEncrypted,
-    DateTime? timestamp,
-    MessageDeliveryStatus? deliveryStatus,
-  }) {
-    return Message(
-      content: content ?? this.content,
-      isEncrypted: isEncrypted ?? this.isEncrypted,
-      timestamp: timestamp ?? this.timestamp,
-      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
-    );
-  }
-}
-
-enum MessageDeliveryStatus {
-  sent,
-  delivered,
-  failed,
-}
-
-class MessageListScreen extends StatelessWidget {
-  final List<Message> messages;
-
-  const MessageListScreen({Key? key, required this.messages}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Message List'),
-      ),
-      body: ListView.builder(
-        itemCount: messages.length,
-        itemBuilder: (context, index) {
-          final message = messages[index];
-          return ListTile(
-            title: Text(message.content),
-            subtitle: Text(message.deliveryStatus.toString()),
-          );
-        },
+  Widget _buildActionButton(String text, IconData icon, VoidCallback? onPressed, {bool fullWidth = false}) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(text),
+      style: ElevatedButton.styleFrom(
+        minimumSize: fullWidth ? Size(double.infinity, 48) : null,
       ),
     );
   }
