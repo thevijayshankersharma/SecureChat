@@ -134,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         isEncrypted: true,
         timestamp: DateTime.now(),
         deliveryStatus: MessageDeliveryStatus.sent,
+        recipient: phoneNumber,
       ));
     });
   }
@@ -255,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatHistoryScreen(chatContacts: _messages.map((m) => _phoneController.text).toSet().toList()),
+        builder: (context) => ChatHistoryScreen(chatContacts: _messages.map((m) => m.recipient).toSet().toList()),
       ),
     );
   }
@@ -375,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           : Icon(icon),
       label: Text(text),
       style: ElevatedButton.styleFrom(
-        primary: Colors.teal,
+        backgroundColor: Colors.teal,
         minimumSize: fullWidth ? Size(double.infinity, 48) : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
