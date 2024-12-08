@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:securechat/utils/rc5_encryption.dart';
@@ -8,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
 import 'package:securechat/models/message.dart';
+import 'chat_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -54,43 +54,43 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _encryptMessage() {
-  String message = _messageController.text;
-  String key = _keyController.text;
+    String message = _messageController.text;
+    String key = _keyController.text;
 
-  if (message.isEmpty || key.isEmpty) {
-    _showSnackBar('Please enter both message and key!');
-    return;
+    if (message.isEmpty || key.isEmpty) {
+      _showSnackBar('Please enter both message and key!');
+      return;
+    }
+
+    String encryptedMessage = RC5Encryption.encrypt(message, key);
+    print('Debug - Encrypted message: $encryptedMessage');
+
+    setState(() {
+      _outputMessage = 'Output;\n$encryptedMessage';
+    });
+
+    _animateOutput();
   }
-
-  String encryptedMessage = RC5Encryption.encrypt(message, key);
-  print('Debug - Encrypted message: $encryptedMessage');
-  
-  setState(() {
-    _outputMessage = 'Output;\n$encryptedMessage'; // Add "Output;" before the encrypted message
-  });
-
-  _animateOutput();
-}
 
   void _decryptMessage() {
-  String encryptedMessage = _messageController.text;
-  String key = _keyController.text;
+    String encryptedMessage = _messageController.text;
+    String key = _keyController.text;
 
-  if (encryptedMessage.isEmpty || key.isEmpty) {
-    _showSnackBar('Please enter both encrypted message and key!');
-    return;
+    if (encryptedMessage.isEmpty || key.isEmpty) {
+      _showSnackBar('Please enter both encrypted message and key!');
+      return;
+    }
+
+    print('Debug - Attempting to decrypt: $encryptedMessage');
+    String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
+    print('Debug - Decryption result: $decryptedMessage');
+
+    setState(() {
+      _outputMessage = 'Output;\n$decryptedMessage';
+    });
+
+    _animateOutput();
   }
-
-  print('Debug - Attempting to decrypt: $encryptedMessage');
-  String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
-  print('Debug - Decryption result: $decryptedMessage');
-  
-  setState(() {
-    _outputMessage = 'Output;\n$decryptedMessage'; // Add "Output;" before the decrypted message
-  });
-
-  _animateOutput();
-}
 
   void _sendSMS() async {
     String encryptedMessage = _outputMessage;
@@ -114,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
       if (result['success']) {
         _showSnackBar(result['message']);
+        _addMessageToHistory(encryptedMessage, phoneNumber);
       } else {
         _showSnackBar('Failed to send SMS: ${result['error']}');
       }
@@ -124,6 +125,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         _isSending = false;
       });
     }
+  }
+
+  void _addMessageToHistory(String content, String phoneNumber) {
+    setState(() {
+      _messages.add(Message(
+        content: content,
+        isEncrypted: true,
+        timestamp: DateTime.now(),
+        deliveryStatus: MessageDeliveryStatus.sent,
+      ));
+    });
   }
 
   Future<void> _selectContact() async {
@@ -230,6 +242,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
+        backgroundColor: Colors.teal,
       ),
     );
   }
@@ -238,11 +251,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _animationController.forward(from: 0.0);
   }
 
+  void _openChatHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatHistoryScreen(chatContacts: _messages.map((m) => _phoneController.text).toSet().toList()),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('SecureChat'),
+        title: Text('SecureChat', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.teal,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: SvgPicture.asset(
@@ -252,8 +275,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.history),
-            onPressed: () {},
+            icon: Icon(Icons.chat),
+            onPressed: _openChatHistory,
           ),
         ],
       ),
@@ -274,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   SizedBox(width: 8),
                   IconButton(
-                    icon: Icon(Icons.contacts),
+                    icon: Icon(Icons.contacts, color: Colors.teal),
                     onPressed: _selectContact,
                     tooltip: 'Select Contact',
                   ),
@@ -299,9 +322,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     child: child,
                   );
                 },
-                child: Text(
-                  _outputMessage,
-                  style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.bold),
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _outputMessage,
+                    style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -316,8 +346,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(),
+        prefixIcon: Icon(icon, color: Colors.teal),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.teal),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.teal, width: 2),
+        ),
       ),
       keyboardType: keyboardType,
     );
@@ -326,11 +363,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildActionButton(String text, IconData icon, VoidCallback? onPressed, {bool fullWidth = false}) {
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon),
+      icon: _isSending && text == 'Send SMS'
+          ? SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2,
+              ),
+            )
+          : Icon(icon),
       label: Text(text),
       style: ElevatedButton.styleFrom(
+        primary: Colors.teal,
         minimumSize: fullWidth ? Size(double.infinity, 48) : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
 }
+
