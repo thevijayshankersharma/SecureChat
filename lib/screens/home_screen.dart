@@ -52,94 +52,100 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _encryptMessage() {
-    String message = _messageController.text;
-    String key = _keyController.text;
+  String message = _messageController.text;
+  String key = _keyController.text;
 
-    if (message.isEmpty || key.isEmpty) {
-      _showSnackBar('Please enter both message and key!');
-      return;
-    }
-
-    String encryptedMessage = RC5Encryption.encrypt(message, key);
-    print('Debug - Encrypted message: $encryptedMessage');
-    setState(() {
-      _outputMessage = encryptedMessage;
-      _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
-    });
-    _animateOutput();
+  if (message.isEmpty || key.isEmpty) {
+    _showSnackBar('Please enter both message and key!');
+    return;
   }
+
+  String encryptedMessage = RC5Encryption.encrypt(message, key);
+  print('Debug - Encrypted message: $encryptedMessage');
+  
+  // Only update the output message, don't add to messages list yet
+  setState(() {
+    _outputMessage = encryptedMessage;
+  });
+
+  _animateOutput();
+}
 
   void _decryptMessage() {
-    String encryptedMessage = _messageController.text;
-    String key = _keyController.text;
+  String encryptedMessage = _messageController.text;
+  String key = _keyController.text;
 
-    if (encryptedMessage.isEmpty || key.isEmpty) {
-      _showSnackBar('Please enter both encrypted message and key!');
-      return;
-    }
-
-    print('Debug - Attempting to decrypt: $encryptedMessage');
-    String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
-    print('Debug - Decryption result: $decryptedMessage');
-    setState(() {
-      _outputMessage = decryptedMessage;
-      _messages.add(Message(content: decryptedMessage, isEncrypted: false, timestamp: DateTime.now()));
-    });
-    _animateOutput();
+  if (encryptedMessage.isEmpty || key.isEmpty) {
+    _showSnackBar('Please enter both encrypted message and key!');
+    return;
   }
 
+  print('Debug - Attempting to decrypt: $encryptedMessage');
+  String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
+  print('Debug - Decryption result: $decryptedMessage');
+  
+  // Only update the output message, don't add to messages list yet
+  setState(() {
+    _outputMessage = decryptedMessage;
+  });
+
+  _animateOutput();
+}
+
   void _sendSMS() async {
-    String encryptedMessage = _outputMessage;
-    String phoneNumber = _phoneController.text;
+  String encryptedMessage = _outputMessage;
+  String phoneNumber = _phoneController.text;
 
-    if (encryptedMessage.isEmpty) {
-      _showSnackBar('Please encrypt a message first!');
-      return;
-    }
+  if (encryptedMessage.isEmpty) {
+    _showSnackBar('Please encrypt a message first!');
+    return;
+  }
 
-    if (!_isValidPhoneNumber(phoneNumber)) {
-      _showSnackBar('Please enter a valid 10-digit phone number after +91');
-      return;
-    }
+  if (!_isValidPhoneNumber(phoneNumber)) {
+    _showSnackBar('Please enter a valid 10-digit phone number after +91');
+    return;
+  }
 
-    setState(() {
-      _isSending = true;
-    });
+  setState(() {
+    _isSending = true;
+  });
 
-    try {
-      Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
-      if (result['success']) {
-        _showSnackBar('SMS sent successfully');
-        _messages.add(Message(
-          content: encryptedMessage,
-          isEncrypted: true,
-          timestamp: DateTime.now(),
-          deliveryStatus: MessageDeliveryStatus.sent,
-        ));
-        _startDeliveryStatusCheck(phoneNumber, encryptedMessage);
-      } else {
-        _showSnackBar('Failed to send SMS: ${result['error']}');
-        _messages.add(Message(
-          content: encryptedMessage,
-          isEncrypted: true,
-          timestamp: DateTime.now(),
-          deliveryStatus: MessageDeliveryStatus.failed,
-        ));
-      }
-    } catch (error) {
-      _showSnackBar('Failed to send SMS: $error');
+  try {
+    Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
+    if (result['success']) {
+      _showSnackBar('SMS sent successfully');
+      
+      // Now that the message is sent, add to the message list
+      _messages.add(Message(
+        content: encryptedMessage,
+        isEncrypted: true,
+        timestamp: DateTime.now(),
+        deliveryStatus: MessageDeliveryStatus.sent,
+      ));
+      _startDeliveryStatusCheck(phoneNumber, encryptedMessage);
+    } else {
+      _showSnackBar('Failed to send SMS: ${result['error']}');
       _messages.add(Message(
         content: encryptedMessage,
         isEncrypted: true,
         timestamp: DateTime.now(),
         deliveryStatus: MessageDeliveryStatus.failed,
       ));
-    } finally {
-      setState(() {
-        _isSending = false;
-      });
     }
+  } catch (error) {
+    _showSnackBar('Failed to send SMS: $error');
+    _messages.add(Message(
+      content: encryptedMessage,
+      isEncrypted: true,
+      timestamp: DateTime.now(),
+      deliveryStatus: MessageDeliveryStatus.failed,
+    ));
+  } finally {
+    setState(() {
+      _isSending = false;
+    });
   }
+}
 
   void _startDeliveryStatusCheck(String phoneNumber, String message) {
     // This is a placeholder for the actual implementation
