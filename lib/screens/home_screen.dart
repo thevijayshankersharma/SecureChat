@@ -7,7 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
-import 'package:your_project/models/message.dart';
+import 'package:securechat/models/message.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
