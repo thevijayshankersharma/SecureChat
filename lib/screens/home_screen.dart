@@ -54,43 +54,44 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _encryptMessage() {
-    String message = _messageController.text;
-    String key = _keyController.text;
+  String message = _messageController.text;
+  String key = _keyController.text;
 
-    if (message.isEmpty || key.isEmpty) {
-      _showSnackBar('Please enter both message and key!');
-      return;
-    }
-
-    String encryptedMessage = RC5Encryption.encrypt(message, key);
-    print('Debug - Encrypted message: $encryptedMessage');
-    
-    setState(() {
-      _outputMessage = encryptedMessage;
-    });
-
-    _animateOutput();
+  if (message.isEmpty || key.isEmpty) {
+    _showSnackBar('Please enter both message and key!');
+    return;
   }
+
+  String encryptedMessage = RC5Encryption.encrypt(message, key);
+  print('Debug - Encrypted message: $encryptedMessage');
+  
+  setState(() {
+    _outputMessage = 'Output;\n$encryptedMessage'; // Add "Output;" before the encrypted message
+  });
+
+  _animateOutput();
+}
 
   void _decryptMessage() {
-    String encryptedMessage = _messageController.text;
-    String key = _keyController.text;
+  String encryptedMessage = _messageController.text;
+  String key = _keyController.text;
 
-    if (encryptedMessage.isEmpty || key.isEmpty) {
-      _showSnackBar('Please enter both encrypted message and key!');
-      return;
-    }
-
-    print('Debug - Attempting to decrypt: $encryptedMessage');
-    String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
-    print('Debug - Decryption result: $decryptedMessage');
-    
-    setState(() {
-      _outputMessage = decryptedMessage;
-    });
-
-    _animateOutput();
+  if (encryptedMessage.isEmpty || key.isEmpty) {
+    _showSnackBar('Please enter both encrypted message and key!');
+    return;
   }
+
+  print('Debug - Attempting to decrypt: $encryptedMessage');
+  String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
+  print('Debug - Decryption result: $decryptedMessage');
+  
+  setState(() {
+    _outputMessage = 'Output;\n$decryptedMessage'; // Add "Output;" before the decrypted message
+  });
+
+  _animateOutput();
+}
+
 
   void _sendSMS() async {
     String encryptedMessage = _outputMessage;
