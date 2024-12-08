@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:securechat/utils/rc5_encryption.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'message_list_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
@@ -144,9 +143,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _startDeliveryStatusCheck(String phoneNumber, String message) {
     // This is a placeholder for the actual implementation
-    // In a real app, you would use a platform-specific method to check delivery status
     Future.delayed(Duration(seconds: 5), () {
-      // Simulating a successful delivery after 5 seconds
       setState(() {
         _messages.last = _messages.last.copyWith(deliveryStatus: MessageDeliveryStatus.delivered);
       });
@@ -162,7 +159,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           withPhoto: false,
         );
         if (contacts.isNotEmpty) {
-          // Show a dialog to select contact
           final contact = await showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -188,9 +184,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             final phones = contact.phones;
             if (phones.isNotEmpty) {
               String phoneNumber = phones.first.number;
-              // Remove any non-digit characters
               phoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
-              // Ensure the number starts with +91 and has 10 digits after
               if (phoneNumber.length > 10) {
                 phoneNumber = '+91' + phoneNumber.substring(phoneNumber.length - 10);
               } else {
@@ -238,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   bool _isValidPhoneNumber(String number) {
-    if (number.length != 13) return false; // +91 + 10 digits
+    if (number.length != 13) return false;
     if (!number.startsWith('+91')) return false;
     return RegExp(r'^\+91[0-9]{10}$').hasMatch(number);
   }
@@ -514,4 +508,29 @@ enum MessageDeliveryStatus {
   sent,
   delivered,
   failed,
+}
+
+class MessageListScreen extends StatelessWidget {
+  final List<Message> messages;
+
+  const MessageListScreen({Key? key, required this.messages}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Message List'),
+      ),
+      body: ListView.builder(
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final message = messages[index];
+          return ListTile(
+            title: Text(message.content),
+            subtitle: Text(message.deliveryStatus.toString()),
+          );
+        },
+      ),
+    );
+  }
 }
