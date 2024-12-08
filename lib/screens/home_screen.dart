@@ -455,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  StringString _getDeliveryStatusText(MessageDeliveryStatus status) {
+  String _getDeliveryStatusText(MessageDeliveryStatus status) {
     switch (status) {
       case MessageDeliveryStatus.sent:
         return 'Sent';
