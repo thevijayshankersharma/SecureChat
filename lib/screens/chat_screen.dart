@@ -28,6 +28,7 @@ class _ChatScreenState extends State<ChatScreen> {
           isEncrypted: _isEncrypted,
           timestamp: DateTime.now(),
           deliveryStatus: MessageDeliveryStatus.sent,
+          recipient: widget.phoneNumber,
         ));
         _messageController.clear();
       });
@@ -79,7 +80,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(Message message) {
+  Widget _buildMessageBubble(message) {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
