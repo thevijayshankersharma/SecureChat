@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'message_list_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:telephony/telephony.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late Animation<double> _animation;
   List<Message> _messages = [];
   bool _isSending = false;
+  final Telephony telephony = Telephony.instance;
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _checkInitialPermissions() async {
     await Permission.contacts.request();
+    await Permission.sms.request();
   }
 
   void _encryptMessage() {
@@ -106,23 +108,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
 
     try {
-      final Uri smsLaunchUri = Uri(
-        scheme: 'sms',
-        path: phoneNumber,
-        queryParameters: <String, String>{
-          'body': encryptedMessage,
-        },
-      );
-
-      if (await canLaunchUrl(smsLaunchUri)) {
-        await launchUrl(smsLaunchUri, mode: LaunchMode.externalApplication);
-        _showSnackBar('SMS app opened with the encrypted message');
+      bool? permissionsGranted = await telephony.requestPhoneAndSmsPermissions;
+      if (permissionsGranted != null && permissionsGranted) {
+        await telephony.sendSms(
+          to: phoneNumber,
+          message: encryptedMessage,
+        );
+        _showSnackBar('SMS sent successfully');
         _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
       } else {
-        _showSnackBar('Could not open SMS app');
+        _showSnackBar('SMS permission not granted');
       }
     } catch (error) {
-      _showSnackBar('Failed to open SMS app: $error');
+      _showSnackBar('Failed to send SMS: $error');
     } finally {
       setState(() {
         _isSending = false;

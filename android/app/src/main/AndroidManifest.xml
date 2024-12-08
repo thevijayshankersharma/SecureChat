@@ -32,6 +32,7 @@
             android:value="2" />
     </application>
     <uses-permission android:name="android.permission.SEND_SMS"/>
+    <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
