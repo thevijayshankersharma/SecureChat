@@ -7,11 +7,11 @@ class SmsService {
   Future<Map<String, dynamic>> sendSMS(String phoneNumber, String message) async {
     if (await Permission.sms.request().isGranted) {
       try {
-        final Map<String, dynamic> result = await platform.invokeMethod('sendSMS', {
+        final bool result = await platform.invokeMethod('sendSMS', {
           'phone': phoneNumber,
           'message': message,
         });
-        return result;
+        return {'success': result, 'message': 'SMS sent successfully'};
       } on PlatformException catch (e) {
         print("Failed to send SMS: '${e.message}'.");
         return {'success': false, 'error': e.message};
