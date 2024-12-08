@@ -19,7 +19,6 @@ dependencies:
   flutter_contacts: ^1.1.9+2
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.16
-  flutter_sms: ^2.3.3
 
 dev_dependencies:
   flutter_test:
