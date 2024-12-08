@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'message_list_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:telephony/telephony.dart';
+import '../services/sms_service.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -22,7 +22,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late Animation<double> _animation;
   List<Message> _messages = [];
   bool _isSending = false;
-  final Telephony telephony = Telephony.instance;
+  final SmsService _smsService = SmsService();
 
   @override
   void initState() {
@@ -108,16 +108,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
 
     try {
-      bool? permissionsGranted = await telephony.requestPhoneAndSmsPermissions;
-      if (permissionsGranted != null && permissionsGranted) {
-        await telephony.sendSms(
-          to: phoneNumber,
-          message: encryptedMessage,
-        );
+      bool success = await _smsService.sendSMS(phoneNumber, encryptedMessage);
+      if (success) {
         _showSnackBar('SMS sent successfully');
         _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
       } else {
-        _showSnackBar('SMS permission not granted');
+        _showSnackBar('Failed to send SMS');
       }
     } catch (error) {
       _showSnackBar('Failed to send SMS: $error');
