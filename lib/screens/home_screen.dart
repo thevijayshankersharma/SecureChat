@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
 
       if (await canLaunchUrl(smsLaunchUri)) {
-        await launchUrl(smsLaunchUri);
+        await launchUrl(smsLaunchUri, mode: LaunchMode.externalApplication);
         _showSnackBar('SMS app opened with the encrypted message');
         _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
       } else {
@@ -164,8 +164,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             final phones = contact.phones;
             if (phones.isNotEmpty) {
               String phoneNumber = phones.first.number;
-              // Remove any non-digit characters and add the +91 prefix
-              phoneNumber = '+91' + phoneNumber.replaceAll(RegExp(r'\D'), '');
+              // Remove any non-digit characters
+              phoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
+              // Ensure the number starts with +91 and has 10 digits after
+              if (phoneNumber.length > 10) {
+                phoneNumber = '+91' + phoneNumber.substring(phoneNumber.length - 10);
+              } else {
+                phoneNumber = '+91' + phoneNumber;
+              }
               setState(() {
                 _phoneController.text = phoneNumber;
               });
