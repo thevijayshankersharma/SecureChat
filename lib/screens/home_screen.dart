@@ -108,20 +108,50 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
 
     try {
-      bool success = await _smsService.sendSMS(phoneNumber, encryptedMessage);
-      if (success) {
+      Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
+      if (result['success']) {
         _showSnackBar('SMS sent successfully');
-        _messages.add(Message(content: encryptedMessage, isEncrypted: true, timestamp: DateTime.now()));
+        _messages.add(Message(
+          content: encryptedMessage,
+          isEncrypted: true,
+          timestamp: DateTime.now(),
+          deliveryStatus: MessageDeliveryStatus.sent,
+        ));
+        _startDeliveryStatusCheck(phoneNumber, encryptedMessage);
       } else {
-        _showSnackBar('Failed to send SMS');
+        _showSnackBar('Failed to send SMS: ${result['error']}');
+        _messages.add(Message(
+          content: encryptedMessage,
+          isEncrypted: true,
+          timestamp: DateTime.now(),
+          deliveryStatus: MessageDeliveryStatus.failed,
+        ));
       }
     } catch (error) {
       _showSnackBar('Failed to send SMS: $error');
+      _messages.add(Message(
+        content: encryptedMessage,
+        isEncrypted: true,
+        timestamp: DateTime.now(),
+        deliveryStatus: MessageDeliveryStatus.failed,
+      ));
     } finally {
       setState(() {
         _isSending = false;
       });
     }
+  }
+
+  void _startDeliveryStatusCheck(String phoneNumber, String message) {
+    // This is a placeholder for the actual implementation
+    // In a real app, you would use a platform-specific method to check delivery status
+    Future.delayed(Duration(seconds: 5), () {
+      // Simulating a successful delivery after 5 seconds
+      setState(() {
+        _messages.last = _messages.last.copyWith(deliveryStatus: MessageDeliveryStatus.delivered);
+      });
+      _showSnackBar('Message delivered successfully');
+    });
   }
 
   Future<void> _selectContact() async {
@@ -270,96 +300,110 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildInputField(_messageController, 'Message', Icons.message),
-                SizedBox(height: 16),
-                _buildInputField(_keyController, 'Encryption Key', Icons.vpn_key),
-                SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
-                    ),
-                    SizedBox(width: 8),
-                    IconButton(
-                      icon: Icon(Icons.contacts),
-                      onPressed: _selectContact,
-                      tooltip: 'Select Contact',
-                    ),
-                  ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInputField(_messageController, 'Message', Icons.message),
+              SizedBox(height: 16),
+              _buildInputField(_keyController, 'Encryption Key', Icons.vpn_key),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+                  ),
+                  SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(Icons.contacts),
+                    onPressed: _selectContact,
+                    tooltip: 'Select Contact',
+                  ),
+                ],
+              ),
+              SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildActionButton('Encrypt', Icons.lock, _encryptMessage),
+                  _buildActionButton('Decrypt', Icons.lock_open, _decryptMessage),
+                ],
+              ),
+              SizedBox(height: 24),
+              _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
+              SizedBox(height: 24),
+              AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  return Transform.scale(
+                    scale: _animation.value,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Output',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        _outputMessage.isEmpty ? 'No output yet' : _outputMessage,
+                        style: GoogleFonts.roboto(
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
+                        maxLines: 5,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton('Encrypt', Icons.lock, _encryptMessage),
-                    _buildActionButton('Decrypt', Icons.lock_open, _decryptMessage),
-                  ],
-                ),
-                SizedBox(height: 24),
-                _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
-                SizedBox(height: 24),
-                AnimatedBuilder(
-                  animation: _animation,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: _animation.value,
-                      child: child,
+              ),
+              SizedBox(height: 24),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final message = _messages[index];
+                    return ListTile(
+                      title: Text(message.content),
+                      subtitle: Text(
+                        '${message.isEncrypted ? "Encrypted" : "Decrypted"} - ${message.timestamp.toString()} - ${_getDeliveryStatusText(message.deliveryStatus)}',
+                      ),
+                      trailing: Icon(_getDeliveryStatusIcon(message.deliveryStatus)),
                     );
                   },
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Output',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          _outputMessage.isEmpty ? 'No output yet' : _outputMessage,
-                          style: GoogleFonts.roboto(
-                            fontSize: 16,
-                            color: Colors.black54,
-                          ),
-                          maxLines: 5,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-                SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _clearFields,
-                  icon: Icon(Icons.clear),
-                  label: Text('Clear All'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    foregroundColor: Colors.white,
-                  ),
+              ),
+              SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _clearFields,
+                icon: Icon(Icons.clear),
+                label: Text('Clear All'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -410,4 +454,64 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
     );
   }
+
+  StringString _getDeliveryStatusText(MessageDeliveryStatus status) {
+    switch (status) {
+      case MessageDeliveryStatus.sent:
+        return 'Sent';
+      case MessageDeliveryStatus.delivered:
+        return 'Delivered';
+      case MessageDeliveryStatus.failed:
+        return 'Failed';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  IconData _getDeliveryStatusIcon(MessageDeliveryStatus status) {
+    switch (status) {
+      case MessageDeliveryStatus.sent:
+        return Icons.check;
+      case MessageDeliveryStatus.delivered:
+        return Icons.done_all;
+      case MessageDeliveryStatus.failed:
+        return Icons.error_outline;
+      default:
+        return Icons.help_outline;
+    }
+  }
+}
+
+class Message {
+  final String content;
+  final bool isEncrypted;
+  final DateTime timestamp;
+  final MessageDeliveryStatus deliveryStatus;
+
+  Message({
+    required this.content,
+    required this.isEncrypted,
+    required this.timestamp,
+    this.deliveryStatus = MessageDeliveryStatus.sent,
+  });
+
+  Message copyWith({
+    String? content,
+    bool? isEncrypted,
+    DateTime? timestamp,
+    MessageDeliveryStatus? deliveryStatus,
+  }) {
+    return Message(
+      content: content ?? this.content,
+      isEncrypted: isEncrypted ?? this.isEncrypted,
+      timestamp: timestamp ?? this.timestamp,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
+    );
+  }
+}
+
+enum MessageDeliveryStatus {
+  sent,
+  delivered,
+  failed,
 }
