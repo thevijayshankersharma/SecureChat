@@ -93,41 +93,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 }
 
   void _sendSMS() async {
-  String encryptedMessage = _outputMessage;
-  String phoneNumber = _phoneController.text;
+    String encryptedMessage = _outputMessage;
+    String phoneNumber = _phoneController.text;
 
-  if (encryptedMessage.isEmpty) {
-    _showSnackBar('Please encrypt a message first!');
-    return;
-  }
-
-  if (!_isValidPhoneNumber(phoneNumber)) {
-    _showSnackBar('Please enter a valid 10-digit phone number after +91');
-    return;
-  }
-
-  setState(() {
-    _isSending = true;
-  });
-
-  try {
-    // Adjusted to expect a bool result
-    bool result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
-
-    // Check based on bool result
-    if (result) {
-      _showSnackBar('SMS sent successfully');
-    } else {
-      _showSnackBar('Failed to send SMS');
+    if (encryptedMessage.isEmpty) {
+      _showSnackBar('Please encrypt a message first!');
+      return;
     }
-  } catch (error) {
-    _showSnackBar('Failed to send SMS: $error');
-  } finally {
+
+    if (!_isValidPhoneNumber(phoneNumber)) {
+      _showSnackBar('Please enter a valid 10-digit phone number after +91');
+      return;
+    }
+
     setState(() {
-      _isSending = false;
+      _isSending = true;
     });
+
+    try {
+      Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
+      if (result['success']) {
+        _showSnackBar(result['message']);
+      } else {
+        _showSnackBar('Failed to send SMS: ${result['error']}');
+      }
+    } catch (error) {
+      _showSnackBar('Failed to send SMS: $error');
+    } finally {
+      setState(() {
+        _isSending = false;
+      });
+    }
   }
-}
 
   Future<void> _selectContact() async {
     try {
