@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     print('Debug - Encrypted message: $encryptedMessage');
 
     setState(() {
-      _outputMessage = 'Output;\n$encryptedMessage';
+      _outputMessage = 'Output: $encryptedMessage';
     });
 
     _animateOutput();
@@ -83,14 +83,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     print('Debug - Decryption result: $decryptedMessage');
 
     setState(() {
-      _outputMessage = 'Output;\n$decryptedMessage';
+      _outputMessage = 'Output: $decryptedMessage';
     });
 
     _animateOutput();
   }
 
   void _sendSMS() async {
-    String encryptedMessage = _outputMessage;
+    String encryptedMessage = _outputMessage.startsWith('Output: ')
+        ? _outputMessage.substring(8)
+        : _outputMessage;
     String phoneNumber = _phoneController.text;
 
     if (encryptedMessage.isEmpty) {
@@ -258,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             children: [
               _buildInputField(_messageController, 'Message', Icons.message),
               SizedBox(height: 16),
-              _buildInputField(_keyController, 'Encryption Key', Icons.vpn_key),
+              _buildInputField(_keyController, 'Key', Icons.vpn_key),
               SizedBox(height: 16),
               Row(
                 children: [
