@@ -6,7 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
-import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -243,11 +242,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('SecureChat', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
-        backgroundColor: Theme.of(context).primaryColor,
-        elevation: 0,
+        title: Text('SecureChat', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.teal,
         leading: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(8.0),
           child: SvgPicture.asset(
             'assets/images/lock_icon.svg',
             colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
@@ -255,45 +253,37 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Lottie.asset(
-                  'assets/animations/secure_chat.json',
-                  height: 200,
-                  fit: BoxFit.contain,
-                ),
-                SizedBox(height: 24),
-                _buildInputField(_messageController, 'Message', Icons.message),
-                SizedBox(height: 16),
-                _buildInputField(_keyController, 'Key', Icons.vpn_key),
-                SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
-                    ),
-                    SizedBox(width: 12),
-                    _buildContactButton(),
-                  ],
-                ),
-                SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(child: _buildActionButton('Encrypt', Icons.lock, _encryptMessage)),
-                    SizedBox(width: 16),
-                    Expanded(child: _buildActionButton('Decrypt', Icons.lock_open, _decryptMessage)),
-                  ],
-                ),
-                SizedBox(height: 24),
-                _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
-                SizedBox(height: 24),
-                _buildOutputContainer(),
-              ],
-            ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInputField(_messageController, 'Message', Icons.message),
+              SizedBox(height: 16),
+              _buildInputField(_keyController, 'Key', Icons.vpn_key),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+                  ),
+                  SizedBox(width: 8),
+                  _buildContactButton(),
+                ],
+              ),
+              SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _buildActionButton('Encrypt', Icons.lock, _encryptMessage)),
+                  SizedBox(width: 16),
+                  Expanded(child: _buildActionButton('Decrypt', Icons.lock_open, _decryptMessage)),
+                ],
+              ),
+              SizedBox(height: 24),
+              _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
+              SizedBox(height: 24),
+              _buildOutputContainer(),
+            ],
           ),
         ),
       ),
