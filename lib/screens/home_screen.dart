@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
+import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -242,10 +243,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('SecureChat', style: GoogleFonts.roboto(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.teal,
+        title: Text('SecureChat', style: GoogleFonts.montserrat(fontWeight: FontWeight.bold)),
+        backgroundColor: Theme.of(context).primaryColor,
+        elevation: 0,
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(12.0),
           child: SvgPicture.asset(
             'assets/images/lock_icon.svg',
             colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
@@ -253,60 +255,45 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildInputField(_messageController, 'Message', Icons.message),
-              SizedBox(height: 16),
-              _buildInputField(_keyController, 'Key', Icons.vpn_key),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
-                  ),
-                  SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(Icons.contacts, color: Colors.teal),
-                    onPressed: _selectContact,
-                    tooltip: 'Select Contact',
-                  ),
-                ],
-              ),
-              SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildActionButton('Encrypt', Icons.lock, _encryptMessage),
-                  _buildActionButton('Decrypt', Icons.lock_open, _decryptMessage),
-                ],
-              ),
-              SizedBox(height: 24),
-              _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
-              SizedBox(height: 24),
-              AnimatedBuilder(
-                animation: _animation,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _animation.value,
-                    child: child,
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _outputMessage,
-                    style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Lottie.asset(
+                  'assets/animations/secure_chat.json',
+                  height: 200,
+                  fit: BoxFit.contain,
                 ),
-              ),
-            ],
+                SizedBox(height: 24),
+                _buildInputField(_messageController, 'Message', Icons.message),
+                SizedBox(height: 16),
+                _buildInputField(_keyController, 'Key', Icons.vpn_key),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildInputField(_phoneController, 'Recipient Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+                    ),
+                    SizedBox(width: 12),
+                    _buildContactButton(),
+                  ],
+                ),
+                SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: _buildActionButton('Encrypt', Icons.lock, _encryptMessage)),
+                    SizedBox(width: 16),
+                    Expanded(child: _buildActionButton('Decrypt', Icons.lock_open, _decryptMessage)),
+                  ],
+                ),
+                SizedBox(height: 24),
+                _buildActionButton('Send SMS', Icons.send, _isSending ? null : _sendSMS, fullWidth: true),
+                SizedBox(height: 24),
+                _buildOutputContainer(),
+              ],
+            ),
           ),
         ),
       ),
@@ -314,45 +301,139 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildInputField(TextEditingController controller, String label, IconData icon, {TextInputType keyboardType = TextInputType.text}) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.teal),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.teal),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.teal, width: 2),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      keyboardType: keyboardType,
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Theme.of(context).primaryColor),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        keyboardType: keyboardType,
+      ),
+    );
+  }
+
+  Widget _buildContactButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(Icons.contacts, color: Colors.white),
+        onPressed: _selectContact,
+        tooltip: 'Select Contact',
+      ),
     );
   }
 
   Widget _buildActionButton(String text, IconData icon, VoidCallback? onPressed, {bool fullWidth = false}) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: _isSending && text == 'Send SMS'
-          ? SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: _isSending && text == 'Send SMS'
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Icon(icon),
+        label: Text(text),
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          textStyle: GoogleFonts.montserrat(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutputContainer() {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _animation.value,
+          child: child,
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Output:',
+              style: GoogleFonts.montserrat(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
               ),
-            )
-          : Icon(icon),
-      label: Text(text),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.teal,
-        minimumSize: fullWidth ? Size(double.infinity, 48) : null,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+            ),
+            SizedBox(height: 8),
+            Text(
+              _outputMessage,
+              style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.normal),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+

@@ -47,13 +47,13 @@ class SecureChatApp extends StatelessWidget {
     return MaterialApp(
       title: 'SecureChat',
       theme: ThemeData(
-        primaryColor: Color(0xFF6200EE),
+        primaryColor: Color(0xFF1E88E5),
         colorScheme: ColorScheme.light(
-          primary: Color(0xFF6200EE),
-          secondary: Color(0xFF03DAC6),
+          primary: Color(0xFF1E88E5),
+          secondary: Color(0xFF00BCD4),
           surface: Colors.white,
-          background: Colors.grey[50]!,
-          error: Color(0xFFB00020),
+          background: Color(0xFFF5F5F5),
+          error: Color(0xFFD32F2F),
           onPrimary: Colors.white,
           onSecondary: Colors.black,
           onSurface: Colors.black,
@@ -61,23 +61,23 @@ class SecureChatApp extends StatelessWidget {
           onError: Colors.white,
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: Colors.grey[50],
+        scaffoldBackgroundColor: Color(0xFFF5F5F5),
         appBarTheme: AppBarTheme(
           elevation: 0,
-          backgroundColor: Color(0xFF6200EE),
+          backgroundColor: Color(0xFF1E88E5),
           foregroundColor: Colors.white,
           centerTitle: true,
-          titleTextStyle: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
+          titleTextStyle: GoogleFonts.montserrat(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
         textTheme: TextTheme(
-          titleLarge: GoogleFonts.poppins(
+          titleLarge: GoogleFonts.montserrat(
             color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
           ),
           bodyMedium: GoogleFonts.roboto(
             color: Colors.black87,
@@ -92,28 +92,28 @@ class SecureChatApp extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.grey[200],
+          fillColor: Colors.white,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Color(0xFF6200EE), width: 2),
+            borderSide: BorderSide(color: Color(0xFF1E88E5), width: 2),
           ),
           labelStyle: GoogleFonts.roboto(color: Colors.black54),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             foregroundColor: Colors.white,
-            backgroundColor: Color(0xFF6200EE),
+            backgroundColor: Color(0xFF1E88E5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-            textStyle: GoogleFonts.poppins(
+            textStyle: GoogleFonts.montserrat(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
