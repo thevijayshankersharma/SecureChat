@@ -6,8 +6,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
-import 'package:securechat/models/message.dart';
-import 'chat_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -21,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   String _outputMessage = '';
   late AnimationController _animationController;
   late Animation<double> _animation;
-  List<Message> _messages = [];
   bool _isSending = false;
   final SmsService _smsService = SmsService();
 
@@ -114,7 +111,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Map<String, dynamic> result = await _smsService.sendSMS(phoneNumber, encryptedMessage);
       if (result['success']) {
         _showSnackBar(result['message']);
-        _addMessageToHistory(encryptedMessage, phoneNumber);
       } else {
         _showSnackBar('Failed to send SMS: ${result['error']}');
       }
@@ -125,18 +121,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         _isSending = false;
       });
     }
-  }
-
-  void _addMessageToHistory(String content, String phoneNumber) {
-    setState(() {
-      _messages.add(Message(
-        content: content,
-        isEncrypted: true,
-        timestamp: DateTime.now(),
-        deliveryStatus: MessageDeliveryStatus.sent,
-        recipient: phoneNumber,
-      ));
-    });
   }
 
   Future<void> _selectContact() async {
@@ -252,15 +236,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _animationController.forward(from: 0.0);
   }
 
-  void _openChatHistory() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatHistoryScreen(chatContacts: _messages.map((m) => m.recipient).toSet().toList()),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -274,12 +249,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.chat),
-            onPressed: _openChatHistory,
-          ),
-        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -385,4 +354,3 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 }
-
