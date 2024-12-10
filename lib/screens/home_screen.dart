@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     print('Debug - Encrypted message: $encryptedMessage');
 
     setState(() {
-      _outputMessage = 'Output: $encryptedMessage';
+      _outputMessage = encryptedMessage;
     });
 
     _animateOutput();
@@ -80,10 +80,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     print('Debug - Attempting to decrypt: $encryptedMessage');
     String decryptedMessage = RC5Encryption.decrypt(encryptedMessage, key);
+
+    if (decryptedMessage.isEmpty) {
+      _showSnackBar('Unable to decrypt message. Please check your input and key.');
+      return;
+    }
+
     print('Debug - Decryption result: $decryptedMessage');
 
     setState(() {
-      _outputMessage = 'Output: $decryptedMessage';
+      _outputMessage = decryptedMessage;
     });
 
     _animateOutput();
