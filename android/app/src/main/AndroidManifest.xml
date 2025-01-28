@@ -44,7 +44,7 @@
             android:name=".SmsSentReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="SMS_SENT" />
+                <action android:name="com.example.securechat.SMS_SENT" />
             </intent-filter>
         </receiver>
 
