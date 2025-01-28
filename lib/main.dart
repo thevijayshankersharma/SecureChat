@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart'; // Import kIsWeb
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
@@ -14,8 +15,19 @@ void main() async {
 }
 
 Future<void> requestPermissions() async {
-  await Permission.sms.request();
+  // Check if the platform is mobile (Android or iOS)
+  if (!kIsWeb) {
+    // Request SMS permission for mobile platforms (Android/iOS)
+    if (await Permission.sms.isGranted) {
+      print("SMS permission already granted");
+    } else {
+      await Permission.sms.request(); // Request permission
+    }
+  } else {
+    print("SMS permission is not requested on web.");
+  }
 }
+
 
 void testEncryption() {
   String originalMessage = "Hello, World!";
