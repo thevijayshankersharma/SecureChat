@@ -24,13 +24,14 @@ class SmsSender(private val activity: Activity) {
                 PendingIntent.FLAG_IMMUTABLE
             )
 
+            // Create a BroadcastReceiver to handle the result of SMS sending
             val sentReceiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
                     when (resultCode) {
-                        Activity.RESULT_OK -> result.success(true)
-                        else -> result.success(false)
+                        Activity.RESULT_OK -> result.success(true) // SMS sent successfully
+                        else -> result.success(false) // SMS failed
                     }
-                    activity.unregisterReceiver(this)
+                    activity.unregisterReceiver(this) // Unregister receiver after use
                 }
             }
 
@@ -41,4 +42,3 @@ class SmsSender(private val activity: Activity) {
         }
     }
 }
-
