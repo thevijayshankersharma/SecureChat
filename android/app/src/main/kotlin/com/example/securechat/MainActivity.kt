@@ -4,6 +4,7 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import androidx.annotation.NonNull
+import android.util.Log
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.example.securechat/sms"
@@ -14,19 +15,25 @@ class MainActivity : FlutterActivity() {
         smsSender = SmsSender(this)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "sendSMS" -> {
-                    val phone = call.argument<String>("phone")
-                    val message = call.argument<String>("message")
+            try {
+                when (call.method) {
+                    "sendSMS" -> {
+                        val phone = call.argument<String>("phone")
+                        val message = call.argument<String>("message")
 
-                    if (phone == null || message == null) {
-                        result.error("INVALID_ARGUMENTS", "Phone number or message is null", null)
-                        return@setMethodCallHandler
+                        if (phone == null || message == null) {
+                            result.error("INVALID_ARGUMENTS", "Phone number or message is null", null)
+                            return@setMethodCallHandler
+                        }
+                        smsSender.sendSMS(phone, message, result)
                     }
-                    smsSender.sendSMS(phone, message, result)
+                    else -> result.notImplemented()
                 }
-                else -> result.notImplemented()
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error in MethodChannel: ${e.message}")
+                result.error("UNEXPECTED_ERROR", e.message, null)
             }
         }
     }
 }
+

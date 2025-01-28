@@ -11,10 +11,13 @@ class SmsService {
           'phone': phoneNumber,
           'message': message,
         });
-        return {'success': result, 'message': 'SMS sent successfully'};
+        return {'success': result, 'message': result ? 'SMS sent successfully' : 'Failed to send SMS'};
       } on PlatformException catch (e) {
         print("Failed to send SMS: '${e.message}'.");
         return {'success': false, 'error': e.message};
+      } catch (e) {
+        print("Unexpected error: $e");
+        return {'success': false, 'error': 'Unexpected error occurred'};
       }
     }
     return {'success': false, 'error': 'SMS permission not granted'};

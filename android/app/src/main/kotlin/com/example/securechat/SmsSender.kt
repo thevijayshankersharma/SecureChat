@@ -9,10 +9,12 @@ import android.content.IntentFilter
 import android.os.Build
 import android.telephony.SmsManager
 import io.flutter.plugin.common.MethodChannel
+import android.util.Log
 
 class SmsSender(private val activity: Activity) {
     companion object {
         private const val SMS_SENT = "SMS_SENT"
+        private const val TAG = "SmsSender"
     }
 
     fun sendSMS(phoneNumber: String, message: String, result: MethodChannel.Result) {
@@ -33,14 +35,30 @@ class SmsSender(private val activity: Activity) {
             // Create a BroadcastReceiver to handle the result of SMS sending
             val sentReceiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
-                    when (resultCode) {
-                        Activity.RESULT_OK -> result.success(true) // SMS sent successfully
-                        else -> result.success(false) // SMS failed
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        activity.unregisterReceiver(this)
-                    } else {
-                        activity.unregisterReceiver(this)
+                    try {
+                        when (resultCode) {
+                            Activity.RESULT_OK -> {
+                                Log.d(TAG, "SMS sent successfully")
+                                result.success(true)
+                            }
+                            else -> {
+                                Log.e(TAG, "Failed to send SMS: $resultCode")
+                                result.success(false)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in onReceive: ${e.message}")
+                        result.error("RECEIVE_ERROR", e.message, null)
+                    } finally {
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                context?.unregisterReceiver(this)
+                            } else {
+                                activity.unregisterReceiver(this)
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error unregistering receiver: ${e.message}")
+                        }
                     }
                 }
             }
@@ -54,6 +72,7 @@ class SmsSender(private val activity: Activity) {
 
             smsManager.sendTextMessage(phoneNumber, null, message, sentIntent, null)
         } catch (e: Exception) {
+            Log.e(TAG, "Error sending SMS: ${e.message}")
             result.error("SEND_SMS_ERROR", e.message, null)
         }
     }
