@@ -13,7 +13,6 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         smsSender = SmsSender(this)
 
-        // Set up method channel for communication with Flutter
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "sendSMS" -> {

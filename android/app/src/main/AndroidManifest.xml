@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.securechat">
     
@@ -28,13 +29,22 @@
             </intent-filter>
         </activity>
 
+        <!-- SMS Receiver -->
         <receiver
             android:name=".SmsReceiver"
-            android:permission="android.permission.BROADCAST_SMS"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- SMS Sent Receiver -->
+        <receiver
+            android:name=".SmsSentReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="SMS_SENT" />
             </intent-filter>
         </receiver>
 
