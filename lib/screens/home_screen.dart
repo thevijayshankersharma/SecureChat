@@ -8,6 +8,8 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/sms_service.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -166,9 +168,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               String phoneNumber = phones.first.number;
               phoneNumber = phoneNumber.replaceAll(RegExp(r'\D'), '');
               if (phoneNumber.length > 10) {
-                phoneNumber = '+91' + phoneNumber.substring(phoneNumber.length - 10);
+                phoneNumber = '+91${phoneNumber.substring(phoneNumber.length - 10)}';
               } else {
-                phoneNumber = '+91' + phoneNumber;
+                phoneNumber = '+91$phoneNumber';
               }
               setState(() {
                 _phoneController.text = phoneNumber;

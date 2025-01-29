@@ -10,14 +10,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.securechat/sms"
+    private val SMS_CHANNEL = "com.example.securechat/sms"
+    private val SMS_RECEIVED_CHANNEL = "com.example.securechat/sms_received"
     private lateinit var smsSender: SmsSender
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         smsSender = SmsSender(this)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "sendSMS" -> {
                     val phone = call.argument<String>("phone")
@@ -40,6 +41,21 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // Set up a method channel for receiving SMS
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SMS_RECEIVED_CHANNEL).setMethodCallHandler { call, result ->
+            // This channel will be used to send received SMS to Flutter
+            // We don't need to implement any methods here
+            result.notImplemented()
+        }
+    }
+
+    // Method to be called from SmsReceiver when an SMS is received
+    fun onSmsReceived(sender: String, message: String) {
+        MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, SMS_RECEIVED_CHANNEL).invokeMethod(
+            "onSmsReceived",
+            mapOf("sender" to sender, "message" to message)
+        )
     }
 }
 
